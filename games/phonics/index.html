@@ -701,6 +701,17 @@ function getAvailableWords() {
   });
 }
 
+// ── Phoneme sounds ────────────────────────────────────────────────────────
+const PHONEME_SOUNDS = {
+  'm':'muh','a':'ah','s':'suh','d':'duh','t':'tuh',
+  'i':'ih','n':'nuh','p':'puh','g':'guh','o':'oh',
+  'c':'kuh','k':'kuh','u':'uh','b':'buh','f':'fuh',
+  'e':'eh','l':'luh','h':'huh','r':'ruh','j':'juh',
+  'v':'vuh','y':'yuh','w':'wuh','z':'zuh','x':'ks',
+  'sh':'sh','ch':'ch','th':'th','ng':'ng',
+};
+function phonemeSound(ph) { return PHONEME_SOUNDS[ph] || ph; }
+
 // ── Speech ────────────────────────────────────────────────────────────────
 function speak(text, rate=0.88, pitch=1.1) {
   window.speechSynthesis.cancel();
@@ -882,6 +893,7 @@ function tapTile(tileEl, phoneme) {
 
   tileEl.classList.add('used');
   placed.push({ phoneme, tileEl });
+  speak(phonemeSound(phoneme), 0.88, 1.1);
 
   const box = document.querySelector(`.box[data-idx="${placed.length-1}"]`);
   box.textContent = phoneme;
@@ -1028,20 +1040,22 @@ function resetFingers() {
   });
 }
 
-// Fred talk: pulse each box slowly so the child can say each sound aloud
+// Fred talk: pulse each box and speak its phoneme sound
 function fredTalkAnimation(onDone) {
   const boxes = [...document.querySelectorAll('.box')];
+  const phonemes = roundWords[roundIndex].phonemes;
   let i = 0;
   function pulse() {
     if (i >= boxes.length) { onDone(); return; }
     boxes[i].classList.add('fred-pulse');
+    speak(phonemeSound(phonemes[i]), 0.88, 1.1);
     setTimeout(() => {
       boxes[i].classList.remove('fred-pulse');
       i++;
-      setTimeout(pulse, 180); // gap between sounds
-    }, 900); // hold each sound long enough to say it aloud
+      setTimeout(pulse, 180);
+    }, 900);
   }
-  setTimeout(pulse, 300); // brief pause after boxes go green
+  setTimeout(pulse, 300);
 }
 
 // ── Score ─────────────────────────────────────────────────────────────────
