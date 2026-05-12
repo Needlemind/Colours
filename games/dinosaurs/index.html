@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Dino Count!</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 16px 36px;
+      user-select: none;
+      overflow: hidden;
+      background: linear-gradient(to bottom,
+        #87ceeb 0%, #a8d8ea 25%,
+        #4a9e3f 55%, #3a8030 70%, #2d6624 100%);
+    }
+
+    /* Scenery */
+    #scenery {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .cloud {
+      position: absolute;
+      background: rgba(255,255,255,0.9);
+      border-radius: 60px;
+    }
+    .cloud::before, .cloud::after {
+      content: ''; position: absolute;
+      background: rgba(255,255,255,0.9); border-radius: 50%;
+    }
+    #cloud1 { width:120px; height:38px; top:6%; left:5%; animation: drift 30s ease-in-out infinite; }
+    #cloud1::before { width:60px; height:60px; top:-30px; left:12px; }
+    #cloud1::after  { width:46px; height:46px; top:-24px; left:52px; }
+    #cloud2 { width:96px; height:32px; top:10%; right:8%; animation: drift 42s ease-in-out infinite 12s; }
+    #cloud2::before { width:48px; height:48px; top:-24px; left:10px; }
+    #cloud2::after  { width:36px; height:36px; top:-18px; left:44px; }
+    @keyframes drift { 0%,100%{transform:translateX(0)} 50%{transform:translateX(20px)} }
+
+    .volcano {
+      position: absolute; bottom: 44%; left: 3%;
+      width: 0; height: 0;
+      border-left: 44px solid transparent;
+      border-right: 44px solid transparent;
+      border-bottom: 80px solid #8B6355;
+    }
+    .volcano::after {
+      content: '💨'; position: absolute;
+      top: -90px; left: -12px; font-size: 1.4rem;
+      animation: puff 3s ease-in-out infinite;
+    }
+    @keyframes puff { 0%,100%{opacity:0.3;transform:translateY(0)} 50%{opacity:1;transform:translateY(-10px)} }
+
+    .palm { position: absolute; bottom: 44%; font-size: 3rem; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2)); }
+    #palm1 { right: 5%; }
+    #palm2 { right: 16%; font-size: 2.2rem; }
+
+    #home-btn {
+      position: fixed; top: 14px; left: 16px;
+      background: rgba(255,255,255,0.9); border: none; border-radius: 50%;
+      width: 46px; height: 46px; font-size: 22px; cursor: pointer; z-index: 20;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-decoration: none;
+    }
+
+    #title {
+      font-size: clamp(1.8rem, 7vw, 2.8rem);
+      color: #fff;
+      text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+      position: relative; z-index: 1;
+    }
+
+    #question {
+      font-size: clamp(1.1rem, 4.5vw, 1.6rem);
+      color: #fff;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+      position: relative; z-index: 1;
+    }
+
+    #dino-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      padding: 8px;
+      max-width: 600px;
+      width: 100%;
+      position: relative; z-index: 1;
+    }
+
+    .dino-card {
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      border: 4px solid rgba(255,255,255,0.5);
+      animation: dino-bob 2.2s ease-in-out infinite;
+      transition: transform 0.1s;
+    }
+    .dino-card:nth-child(2) { animation-delay: 0.3s; }
+    .dino-card:nth-child(3) { animation-delay: 0.6s; }
+    .dino-card:nth-child(4) { animation-delay: 0.9s; }
+    .dino-card:nth-child(5) { animation-delay: 1.2s; }
+    @keyframes dino-bob {
+      0%,100% { transform: translateY(0) rotate(-2deg); }
+      50%      { transform: translateY(-10px) rotate(2deg); }
+    }
+
+    #message {
+      font-size: clamp(1.2rem, 5vw, 1.8rem);
+      color: #fff;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+      min-height: 2rem;
+      text-align: center;
+      position: relative; z-index: 1;
+    }
+
+    #number-row {
+      display: flex; gap: 10px;
+      justify-content: center; flex-wrap: wrap;
+      width: 100%; max-width: 420px;
+      position: relative; z-index: 1;
+    }
+
+    .num-btn {
+      width: clamp(54px, 16vw, 74px);
+      height: clamp(54px, 16vw, 74px);
+      border-radius: 18px;
+      border: 4px solid rgba(0,0,0,0.15);
+      font-family: inherit;
+      font-size: clamp(1.6rem, 7vw, 2.4rem);
+      font-weight: bold;
+      color: #fff;
+      cursor: pointer;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+      box-shadow: 0 6px 0 rgba(0,0,0,0.2), 0 8px 16px rgba(0,0,0,0.15);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .num-btn:active  { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+    .num-btn.wrong   { animation: shake 0.4s ease; }
+    .num-btn.correct { animation: pop 0.3s ease; }
+
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(9px)} 60%{transform:translateX(-9px)} 80%{transform:translateX(9px)} }
+    @keyframes pop   { 0%{transform:scale(1)} 50%{transform:scale(1.25)} 100%{transform:scale(1)} }
+
+    /* Celebration */
+    #celebration {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.55);
+      z-index: 10; opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+      gap: 12px;
+    }
+    #celebration.show { opacity: 1; pointer-events: all; }
+    #cel-emoji  { font-size: clamp(80px, 24vw, 130px); animation: bounce 0.5s ease infinite alternate; }
+    #cel-text   { font-size: clamp(2rem, 8vw, 3.2rem); font-weight: bold; color: #fff; text-shadow: 3px 3px 0 rgba(0,0,0,0.3); text-align: center; padding: 0 16px; }
+    #next-btn {
+      margin-top: 8px; padding: 16px 48px;
+      font-size: clamp(1.2rem, 5vw, 1.6rem); font-family: inherit; font-weight: bold;
+      background: linear-gradient(145deg, #ff69b4, #c44d90);
+      border: 3px solid #8b2060; border-radius: 50px; color: #fff; cursor: pointer;
+      box-shadow: 0 5px 14px rgba(0,0,0,0.3); transition: transform 0.1s;
+    }
+    #next-btn:active { transform: scale(0.95); }
+    @keyframes bounce { from{transform:translateY(0) scale(1)} to{transform:translateY(-18px) scale(1.1)} }
+
+    .confetti-piece { position:fixed; animation:fall linear forwards; pointer-events:none; }
+    @keyframes fall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+  </style>
+</head>
+<body>
+
+<div id="scenery">
+  <div id="cloud1" class="cloud"></div>
+  <div id="cloud2" class="cloud"></div>
+  <div class="volcano"></div>
+  <span class="palm" id="palm1">🌴</span>
+  <span class="palm" id="palm2">🌴</span>
+</div>
+
+<a href="../../" id="home-btn" aria-label="Home">&#127968;</a>
+
+<div id="title">🦕 Dino Count!</div>
+<div id="question">How many dinosaurs?</div>
+<div id="dino-area"></div>
+<div id="message"></div>
+<div id="number-row"></div>
+
+<div id="celebration">
+  <div id="cel-emoji">🦕</div>
+  <div id="cel-text">Well done!</div>
+  <button id="next-btn">Next! 🦖</button>
+</div>
+
+<script>
+const DINO_COLORS = [
+  '#FF69B4', // hot pink
+  '#9B59B6', // purple
+  '#E67E22', // orange
+  '#1ABC9C', // teal
+  '#3498DB', // blue
+  '#E74C3C', // red
+  '#F1C40F', // yellow
+  '#2ECC71', // green
+];
+
+const DINO_EMOJIS = ['🦕', '🦖'];
+
+const PRAISE = [
+  'ROAR! Well done!',
+  'Amazing counting!',
+  'You got it!',
+  'Brilliant!',
+  'Superstar!',
+  'ROAR! Correct!',
+];
+
+const BTN_COLORS = ['#E74C3C', '#3498DB', '#2ECC71', '#F39C12', '#9B59B6'];
+
+let currentCount = 0;
+let blocked = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.85; u.pitch = 1.2; u.lang = 'en-GB';
+  speechSynthesis.speak(u);
+}
+
+function dinoSize(count) {
+  if (count === 1) return { card: 190, font: '8rem' };
+  if (count === 2) return { card: 155, font: '6.5rem' };
+  if (count === 3) return { card: 130, font: '5.5rem' };
+  if (count === 4) return { card: 112, font: '4.8rem' };
+  return { card: 96, font: '4rem' };
+}
+
+function newRound() {
+  blocked = false;
+  document.getElementById('celebration').classList.remove('show');
+  document.querySelectorAll('.confetti-piece').forEach(el => el.remove());
+  document.getElementById('message').textContent = '';
+
+  currentCount = Math.floor(Math.random() * 5) + 1;
+  const colors = shuffle(DINO_COLORS);
+  const size = dinoSize(currentCount);
+
+  const dinoArea = document.getElementById('dino-area');
+  dinoArea.innerHTML = '';
+  for (let i = 0; i < currentCount; i++) {
+    const card = document.createElement('div');
+    card.className = 'dino-card';
+    card.style.cssText = `background:${colors[i]};width:${size.card}px;height:${size.card}px;`;
+    const emoji = document.createElement('span');
+    emoji.style.fontSize = size.font;
+    emoji.textContent = DINO_EMOJIS[i % 2];
+    card.appendChild(emoji);
+    dinoArea.appendChild(card);
+  }
+
+  const numberRow = document.getElementById('number-row');
+  numberRow.innerHTML = '';
+  for (let n = 1; n <= 5; n++) {
+    const btn = document.createElement('button');
+    btn.className = 'num-btn';
+    btn.style.background = BTN_COLORS[n - 1];
+    btn.textContent = n;
+    btn.addEventListener('click', () => onTap(n, btn));
+    numberRow.appendChild(btn);
+  }
+
+  setTimeout(() => speak('How many dinosaurs can you count?'), 300);
+}
+
+function onTap(n, btn) {
+  if (blocked) return;
+  if (n === currentCount) {
+    blocked = true;
+    btn.classList.add('correct');
+    const praise = PRAISE[Math.floor(Math.random() * PRAISE.length)];
+    const dinoEmoji = DINO_EMOJIS[Math.floor(Math.random() * 2)];
+    document.getElementById('cel-emoji').textContent = dinoEmoji;
+    document.getElementById('cel-text').textContent = praise;
+    const countWord = ['one','two','three','four','five'][currentCount - 1];
+    speak(`${countWord} dinosaur${currentCount > 1 ? 's' : ''}! ${praise}`);
+    launchConfetti();
+    setTimeout(() => document.getElementById('celebration').classList.add('show'), 350);
+  } else {
+    btn.classList.remove('wrong');
+    void btn.offsetWidth;
+    btn.classList.add('wrong');
+    btn.addEventListener('animationend', () => btn.classList.remove('wrong'), { once: true });
+    document.getElementById('message').textContent = '🦖 Try again!';
+    speak('Try again!');
+  }
+}
+
+function launchConfetti() {
+  const colors = ['#FF69B4','#9B59B6','#E67E22','#3498DB','#2ECC71','#F1C40F','#E74C3C'];
+  for (let i = 0; i < 65; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `left:${Math.random()*100}vw;top:-20px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'3px'};width:${8+Math.random()*10}px;height:${8+Math.random()*10}px;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.6}s`;
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+}
+
+document.getElementById('next-btn').addEventListener('click', newRound);
+newRound();
+</script>
+</body>
+</html>
